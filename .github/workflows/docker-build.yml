@@ -49,6 +49,20 @@ jobs:
           echo "=== src directory ==="
           ls -la src/ || echo "src directory not found"
 
+      - name: Test build locally (debug)
+        run: |
+          echo "=== Testing npm install ==="
+          npm install || echo "npm install failed"
+          echo ""
+          echo "=== Checking if typescript is installed ==="
+          npx tsc --version || echo "TypeScript not found"
+          echo ""
+          echo "=== Testing npm run build ==="
+          npm run build 2>&1 || echo "Build failed - see output above"
+          echo ""
+          echo "=== Checking dist directory ==="
+          ls -la dist/ || echo "dist directory not found"
+
       - name: Replace Dockerfile with fixed version
         run: |
           # Create a fixed Dockerfile that ensures TypeScript is properly installed
@@ -66,12 +80,18 @@ jobs:
           # Install all dependencies (including devDependencies for TypeScript)
           RUN npm install
 
+          # Verify TypeScript installation
+          RUN npx tsc --version || (echo "TypeScript not found!" && exit 1)
+
           # Copy the source and env example files
           COPY src ./src
           COPY env.example ./.env.example
 
-          # Build the TypeScript source
-          RUN npm run build
+          # Build the TypeScript source with verbose output
+          RUN npm run build || (echo "Build failed!" && cat tsconfig.json && ls -la src/ && exit 1)
+
+          # Verify build output
+          RUN ls -la dist/ || (echo "dist directory not found!" && exit 1)
 
           # Default command to start the MCP server
           CMD ["node", "dist/start.js"]
