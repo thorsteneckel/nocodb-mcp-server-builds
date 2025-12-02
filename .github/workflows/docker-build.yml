@@ -35,6 +35,19 @@ jobs:
         run: |
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Fix Dockerfile for proper TypeScript installation
+        run: |
+          # Ensure TypeScript is installed properly
+          # The issue might be that --ignore-scripts prevents proper installation
+          sed -i 's/npm install --ignore-scripts/npm install/g' Dockerfile || true
+          # Also ensure typescript is explicitly installed if needed
+          if ! grep -q "npm install typescript" Dockerfile; then
+            # Add typescript installation after the first npm install
+            sed -i '/RUN npm install --save-dev @types\/node/a RUN npm install --save-dev typescript' Dockerfile || true
+          fi
+          echo "=== Modified Dockerfile ==="
+          cat Dockerfile
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -51,4 +64,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
