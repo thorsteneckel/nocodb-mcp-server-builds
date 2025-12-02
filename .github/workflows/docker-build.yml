@@ -49,13 +49,21 @@ jobs:
           echo "=== src directory ==="
           ls -la src/ || echo "src directory not found"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
       - name: Test build locally (debug)
         run: |
           echo "=== Testing npm install ==="
-          npm install || echo "npm install failed"
+          npm install 2>&1 || echo "npm install failed"
           echo ""
           echo "=== Checking if typescript is installed ==="
           npx tsc --version || echo "TypeScript not found"
+          echo ""
+          echo "=== Checking installed packages ==="
+          npm list typescript @types/node || echo "Packages not found"
           echo ""
           echo "=== Testing npm run build ==="
           npm run build 2>&1 || echo "Build failed - see output above"
